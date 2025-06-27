@@ -1,0 +1,9 @@
+DATASET SUMMARY
+======================
+Total images: 3881
+Categories: 23
+Duplicates removed: 0
+Min samples/class: 141
+Max samples/class: 170
+Mean samples/class: 168.7
+Std samples/class: 6.0

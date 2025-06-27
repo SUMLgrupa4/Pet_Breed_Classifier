@@ -1,0 +1,8 @@
+FINAL MODEL ASSESSMENT
+=========================
+
+Accuracy:           0.9254 (92.54%)
+Precision (weighted): 0.9293
+Recall (weighted):    0.9254
+F1 Score (weighted):  0.9251
+Avg Inference Time:   1.0746 seconds

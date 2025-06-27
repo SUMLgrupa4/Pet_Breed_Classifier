@@ -1,0 +1,24 @@
+# Virtual environments (e.g. created by venv or conda)
+.venv/
+venv/
+
+# Large files and outputs (models, datasets, logs, predictions, etc.)
+models/autogluon_model/model.ckpt
+models/**/*.pkl
+models/**/*.log
+data/
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.so
+*.log
+*.tmp
+
+
+# Model checkpoints and weights
+*.ckpt
+*.h5
+*.pth
+*.pt
+
