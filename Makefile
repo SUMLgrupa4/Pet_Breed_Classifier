@@ -37,8 +37,8 @@ hf-login:
 push-hub:
 	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier ./streamlit_app.py app.py --repo-type=space --commit-message="Sync App files"
 	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier ./requirements.txt requirements.txt --repo-type=space --commit-message="Sync Requirements"
-	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier ./models /models --repo-type=space --commit-message="Sync Model"
-	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier ./outputs /outputs --repo-type=space --commit-message="Sync Results"
+	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier ./models models --repo-type=space --commit-message="Sync Model"
+	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier ./outputs outputs --repo-type=space --commit-message="Sync Results"
 
 deploy: use-existing eval-simple hf-login push-hub
 
