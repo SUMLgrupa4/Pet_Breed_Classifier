@@ -44,15 +44,6 @@ jobs:
       run: |
         make eval-simple
         
-    - name: Update branch with results
-      env:
-        USER_NAME: ${{ github.actor }}
-        USER_EMAIL: ${{ github.actor }}@users.noreply.github.com
-        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-        GITHUB_REPOSITORY: ${{ github.repository }}
-      run: |
-        make update-branch
-        
   deploy:
     needs: test
     runs-on: ubuntu-latest
@@ -89,7 +80,5 @@ jobs:
       env:
         HF: ${{ secrets.HF_TOKEN }}
         HF_USERNAME: ${{ github.repository_owner }}
-        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-        GITHUB_REPOSITORY: ${{ github.repository }}
       run: |
         make deploy 
