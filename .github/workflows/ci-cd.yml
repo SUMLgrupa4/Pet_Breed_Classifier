@@ -1,0 +1,68 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        make install
+        
+    - name: Format code
+      run: |
+        make format
+        
+    - name: Use existing model (skip training)
+      run: |
+        make use-existing
+        
+    - name: Generate evaluation report
+      run: |
+        make eval-simple
+        
+    - name: Update branch with results
+      env:
+        USER_NAME: ${{ github.actor }}
+        USER_EMAIL: ${{ github.actor }}@users.noreply.github.com
+      run: |
+        make update-branch
+        
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        make install
+        
+    - name: Deploy to Hugging Face
+      env:
+        HF: ${{ secrets.HF_TOKEN }}
+        HF_USERNAME: ${{ github.repository_owner }}
+      run: |
+        make deploy 

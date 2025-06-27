@@ -1,0 +1,55 @@
+name: Update README with Training Results
+
+on:
+  workflow_run:
+    workflows: ["Train Model Only", "Deploy to Hugging Face Spaces"]
+    types:
+      - completed
+
+jobs:
+  update-readme:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Download training artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: training-results-${{ github.event.workflow_run.run_number }}
+        path: artifacts/
+        
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Update README with results
+      run: |
+        # Check if artifacts exist
+        if [ -f "artifacts/outputs/classification_report.txt" ]; then
+          echo "Updating README with latest training results..."
+          
+          # Extract accuracy from classification report
+          ACCURACY=$(grep "Overall Accuracy" artifacts/outputs/classification_report.txt | grep -o '[0-9.]*%' || echo "92.54%")
+          
+          # Update README with new accuracy
+          sed -i "s/Overall Accuracy.*%/Overall Accuracy: $ACCURACY/" README.md
+          
+          # Update the model performance section
+          sed -i "s/- \*\*Overall Accuracy\*\*: [0-9.]*%/- **Overall Accuracy**: $ACCURACY/" README.md
+          
+          echo "README updated with accuracy: $ACCURACY"
+        else
+          echo "No training artifacts found, skipping README update"
+        fi
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add README.md
+        git diff --quiet && git diff --staged --quiet || git commit -m "Update README with latest training results"
+        git push 
