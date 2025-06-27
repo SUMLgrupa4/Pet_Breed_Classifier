@@ -1,4 +1,4 @@
-.PHONY: install format train eval eval-simple update-branch hf-login push-hub deploy deploy-retrain test-local clean help
+.PHONY: install format train eval eval-simple hf-login push-hub deploy deploy-retrain test-local clean help
 
 # Fast install for CI/CD (no AutoGluon)
 install:
@@ -30,16 +30,7 @@ eval-simple:
 	echo '![Confusion Matrix](./outputs/confusion_matrix.png)' >> report.md
 	@echo "Report generated: report.md"
 
-update-branch:
-	git config --global user.name $(USER_NAME)
-	git config --global user.email $(USER_EMAIL)
-	git remote set-url origin https://$(GITHUB_TOKEN)@github.com/$(GITHUB_REPOSITORY).git
-	git commit -am "Update with new results"
-	git push --force origin HEAD:update
-
 hf-login:
-	git pull origin update
-	git switch update
 	pip install -U "huggingface_hub[cli]"
 	huggingface-cli login --token $(HF) --add-to-git-credential
 

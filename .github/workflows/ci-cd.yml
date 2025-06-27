@@ -13,8 +13,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.PAT_TOKEN }}
         
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -29,17 +27,16 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
           
-    - name: Install dependencies (skip AutoGluon for CI/CD)
+    - name: Install dependencies
       run: |
         pip install --upgrade pip
         pip install scikit-learn pillow matplotlib seaborn pandas numpy streamlit black
-        # Skip AutoGluon for faster CI/CD since we have trained model
         
     - name: Format code
       run: |
         make format
         
-    - name: Use existing model (skip training)
+    - name: Use existing model
       run: |
         make use-existing
         
@@ -64,8 +61,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.PAT_TOKEN }}
         
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -80,11 +75,10 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
           
-    - name: Install dependencies (skip AutoGluon for deployment)
+    - name: Install dependencies
       run: |
         pip install --upgrade pip
         pip install scikit-learn pillow matplotlib seaborn pandas numpy streamlit black
-        # Skip AutoGluon for faster deployment since we have trained model
         
     - name: Login to Hugging Face
       run: |
