@@ -33,6 +33,7 @@ eval-simple:
 update-branch:
 	git config --global user.name $(USER_NAME)
 	git config --global user.email $(USER_EMAIL)
+	git remote set-url origin https://$(GITHUB_TOKEN)@github.com/$(GITHUB_REPOSITORY).git
 	git commit -am "Update with new results"
 	git push --force origin HEAD:update
 
