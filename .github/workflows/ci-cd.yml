@@ -74,11 +74,11 @@ jobs:
     - name: Login to Hugging Face
       run: |
         pip install -U "huggingface_hub[cli]"
-        huggingface-cli login --token ${{ secrets.HF_TOKEN }}
+        huggingface-cli login --token ${{ secrets.HF_TOKEN_NEW }}
         
     - name: Deploy to Hugging Face
       env:
-        HF: ${{ secrets.HF_TOKEN }}
+        HF: ${{ secrets.HF_TOKEN_NEW }}
         HF_USERNAME: ${{ github.repository_owner }}
       run: |
         make deploy 
