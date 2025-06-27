@@ -29,10 +29,11 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
           
-    - name: Install dependencies
+    - name: Install dependencies (skip AutoGluon for CI/CD)
       run: |
         pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install scikit-learn pillow matplotlib seaborn pandas numpy streamlit black
+        # Skip AutoGluon for faster CI/CD since we have trained model
         
     - name: Format code
       run: |
@@ -79,15 +80,16 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
           
-    - name: Install dependencies
+    - name: Install dependencies (skip AutoGluon for deployment)
       run: |
         pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install scikit-learn pillow matplotlib seaborn pandas numpy streamlit black
+        # Skip AutoGluon for faster deployment since we have trained model
         
     - name: Login to Hugging Face
-      uses: huggingface/login@v1
-      with:
-        token: ${{ secrets.HF_TOKEN }}
+      run: |
+        pip install -U "huggingface_hub[cli]"
+        huggingface-cli login --token ${{ secrets.HF_TOKEN }}
         
     - name: Deploy to Hugging Face
       env:
