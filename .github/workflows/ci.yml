@@ -1,0 +1,44 @@
+name: Continuous Integration
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+        
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install scikit-learn pillow matplotlib seaborn pandas numpy streamlit black
+        
+    - name: Format code
+      run: |
+        make format
+        
+    - name: Use existing model
+      run: |
+        make use-existing
+        
+    - name: Generate evaluation report
+      run: |
+        make eval-simple 
