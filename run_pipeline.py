@@ -5,7 +5,7 @@ from scripts.validate_model import (
     generate_confusion_matrix,
     generate_classification_report,
     analyze_model_size,
-    final_model_assessment
+    final_model_assessment,
 )
 from pipeline_config import parameters
 
@@ -41,7 +41,9 @@ def run_pipeline():
     print(" Step 7: Final model assessment...")
     final_model_assessment(performance_metrics)
 
-    print("\n Pipeline completed successfully! All outputs saved to 'outputs/' folder.\n")
+    print(
+        "\n Pipeline completed successfully! All outputs saved to 'outputs/' folder.\n"
+    )
 
 
 if __name__ == "__main__":
