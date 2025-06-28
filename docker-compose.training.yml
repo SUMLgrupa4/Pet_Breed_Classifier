@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  pet-breed-training:
+    build:
+      context: .
+      dockerfile: Dockerfile.training
+    container_name: pet-breed-training
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./outputs:/app/outputs
+      - model_cache:/app/.cache
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    command: python run_pipeline.py
+    deploy:
+      resources:
+        limits:
+          memory: 16G
+          cpus: '8.0'
+        reservations:
+          memory: 8G
+          cpus: '4.0'
+
+volumes:
+  model_cache: 
