@@ -21,7 +21,7 @@ eval:
 	cat ./outputs/classification_report.txt >> report.md
 	echo '\n## Confusion Matrix Plot' >> report.md
 	echo '![Confusion Matrix](./outputs/confusion_matrix.png)' >> report.md
-	cml comment create report.md
+	@echo "Report generated: report.md"
 
 eval-simple:
 	echo "## Model Metrics" > report.md

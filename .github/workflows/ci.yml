@@ -14,8 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: iterative/setup-cml@v2
-
       - name: Install Packages
         run: make install
 
@@ -26,9 +24,6 @@ jobs:
         run: make train
 
       - name: Evaluation
-        env:
-          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CML_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: make eval
 
       - name: Update Branch
