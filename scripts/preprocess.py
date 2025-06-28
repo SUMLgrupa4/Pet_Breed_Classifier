@@ -15,6 +15,25 @@ def preprocess_data(parameters):
     outputs_dir = os.path.join(BASE_DIR, 'outputs')
     splits_dir = os.path.join(BASE_DIR, 'data', 'splits')
 
+    # Debug: Print paths
+    print(f"🔍 Debug Paths:")
+    print(f"   __file__: {__file__}")
+    print(f"   BASE_DIR: {BASE_DIR}")
+    print(f"   raw_data_path: {raw_data_path}")
+    print(f"   raw_data_path exists: {os.path.exists(raw_data_path)}")
+    print(f"   Current working directory: {os.getcwd()}")
+    
+    # Check if we're in Docker
+    in_docker = os.path.exists('/.dockerenv')
+    print(f"   In Docker: {in_docker}")
+    
+    # List contents of data directory
+    data_dir = os.path.join(BASE_DIR, 'data')
+    if os.path.exists(data_dir):
+        print(f"   Data directory contents: {os.listdir(data_dir)}")
+    else:
+        print(f"   ❌ Data directory not found: {data_dir}")
+
     image_files = []
 
     print("Scanning raw data directory...")
@@ -31,12 +50,14 @@ def preprocess_data(parameters):
                 try:
                     with Image.open(image_path) as img:
                         # Check if image is valid and has reasonable dimensions
-                        if img.size[0] > 50 and img.size[1] > 50:  # Minimum size check
+                        if img.size[0] > 10 and img.size[1] > 10:  # Reduced minimum size check from 50 to 10
                             image_files.append({
                                 "image": image_path,
                                 "label": category
                             })
                             valid_images += 1
+                        else:
+                            print(f"Image too small: {image_path} - {img.size}")
                 except Exception as e:
                     print(f"Skipping invalid image {image_path}: {e}")
                     continue

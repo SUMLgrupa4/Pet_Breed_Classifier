@@ -56,7 +56,7 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build training Docker image
+    - name: Build training Docker image with data
       run: |
         docker build -f Dockerfile.training -t pet-breed-classifier:training-data .
         docker tag pet-breed-classifier:training-data ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:training-data
@@ -64,7 +64,7 @@ jobs:
 
     - name: Run training pipeline in Docker
       run: |
-        docker run --rm -v $(pwd)/data:/app/data -v $(pwd)/models:/app/models -v $(pwd)/outputs:/app/outputs pet-breed-classifier:training-data python run_pipeline.py
+        docker run --rm pet-breed-classifier:training-data python run_pipeline.py
 
     - name: Build production Docker image with trained model
       run: |

@@ -8,10 +8,30 @@ from scripts.validate_model import (
     final_model_assessment
 )
 from pipeline_config import parameters
+import os
 
 
 def run_pipeline():
     print("\n Starting Full Training & Evaluation Pipeline...\n")
+
+    # Step 0: Fetch data if not already present
+    print(" Step 0: Checking for training data...")
+    data_dir = os.path.join(os.path.dirname(__file__), 'data', 'pet_breeds')
+    
+    if not os.path.exists(data_dir) or not any(os.listdir(data_dir)):
+        print("   No training data found. Fetching from Kaggle...")
+        try:
+            from scripts.fetch_data import fetch_pet_breed_dataset
+            success = fetch_pet_breed_dataset()
+            if not success:
+                raise Exception("Failed to fetch data from Kaggle")
+            print("   ✅ Data fetched successfully!")
+        except Exception as e:
+            print(f"   ❌ Error fetching data: {e}")
+            print("   Please ensure you have Kaggle API credentials set up.")
+            return
+    else:
+        print("   ✅ Training data already present.")
 
     # Step 1: Preprocess data
     print(" Step 1: Preprocessing data...")

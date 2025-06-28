@@ -113,41 +113,42 @@ docker run -p 8501:8501 pet-breed-classifier
 #### Prerequisites
 
 1. **GitHub Repository**: Push your code to GitHub
-2. **Hugging Face Account**: Create an account at [huggingface.co](https://huggingface.co)
-3. **Hugging Face Token**: Generate a token with write permissions
-4. **Docker Hub Account**: Create an account at [hub.docker.com](https://hub.docker.com)
+2. **Docker Hub Account**: Create an account at [hub.docker.com](https://hub.docker.com)
+3. **Kaggle Account**: Create an account at [kaggle.com](https://kaggle.com)
 
 #### Setup Steps
 
 1. **Add GitHub Secrets**
    - Go to your GitHub repository → Settings → Secrets and variables → Actions
    - Add the following secrets:
-     - `HF_TOKEN`: Your Hugging Face token
+     - `KAGGLE_USERNAME`: Your Kaggle username
+     - `KAGGLE_KEY`: Your Kaggle API key
      - `DOCKER_USERNAME`: Your Docker Hub username
      - `DOCKER_PASSWORD`: Your Docker Hub password/token
+     - `USER_NAME`: Your name
+     - `USER_EMAIL`: Your email
 
 2. **Trigger Deployment**
    - **Automatic**: Push to `main` or `master` branch
    - **Manual**: Go to Actions tab → "Continuous Integration" → Run workflow
-   - **Training Only**: Go to Actions tab → "Train Model Only" → Run workflow
 
-3. **Access Your App**
-   - Your app will be available at: `https://huggingface.co/spaces/<your-username>/pet-breed-classifier`
+3. **Access Your Docker Images**
+   - Training image: `your-username/pet-breed-classifier:training-data`
+   - Production image: `your-username/pet-breed-classifier:latest`
 
 ### Docker-Based CI Pipeline
 
 The project now includes a comprehensive Docker-based CI pipeline that:
 
-1. **Fetches Training Data**: Downloads the pet breed dataset from Hugging Face
+1. **Fetches Training Data**: Downloads the pet breed dataset from Kaggle
 2. **Builds Training Image**: Creates a Docker image with all training dependencies
 3. **Runs Training Pipeline**: Executes the complete training pipeline in a containerized environment
 4. **Builds Production Image**: Creates a production-ready image with the trained model
 5. **Pushes to Registry**: Registers both training and production images to Docker Hub
-6. **Deploys to Hugging Face**: Deploys the application with the latest model
 
 #### Data Fetching
 
-The CI pipeline automatically fetches training data from Hugging Face datasets:
+The CI pipeline automatically fetches training data from Kaggle:
 
 ```bash
 # Fetch data manually
@@ -158,7 +159,7 @@ python scripts/fetch_data.py
 ```
 
 The data fetching script:
-- Attempts to load from multiple possible dataset names
+- Downloads from Kaggle dataset: `aseemdandgaval/23-pet-breeds-image-classification`
 - Falls back to creating a sample dataset if the main dataset is unavailable
 - Creates the proper directory structure expected by the training pipeline
 - Generates the label mapping file automatically
