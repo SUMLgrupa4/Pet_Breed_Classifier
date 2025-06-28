@@ -1,4 +1,4 @@
-.PHONY: install format train eval eval-simple hf-login push-hub deploy deploy-retrain test-local clean help
+.PHONY: install format train eval eval-simple hf-login push-hub deploy deploy-retrain test-local clean help update-branch
 
 # Fast install for CI/CD (no AutoGluon)
 install:
@@ -30,17 +30,24 @@ eval-simple:
 	echo '![Confusion Matrix](./outputs/confusion_matrix.png)' >> report.md
 	@echo "Report generated: report.md"
 
+update-branch:
+	git config --global user.name $(USER_NAME)
+	git config --global user.email $(USER_EMAIL)
+	git commit -am "Update with new results"
+	git push --force origin HEAD:update
+
 hf-login:
+	git pull origin update
+	git switch update
 	pip install -U "huggingface_hub[cli]"
 	huggingface-cli login --token $(HF) --add-to-git-credential
 
 push-hub:
 	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier ./app.py app.py --repo-type=space --commit-message="Sync App files"
-	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier ./requirements.txt requirements.txt --repo-type=space --commit-message="Sync Requirements"
 	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier ./models models --repo-type=space --commit-message="Sync Model"
 	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier ./outputs outputs --repo-type=space --commit-message="Sync Results"
 
-deploy: use-existing eval-simple hf-login push-hub
+deploy: hf-login push-hub
 
 deploy-retrain: train eval hf-login push-hub
 
