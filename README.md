@@ -1,3 +1,14 @@
+---
+title: Pet Breed Classifier
+emoji: 🐾
+colorFrom: blue
+colorTo: purple
+sdk: streamlit
+sdk_version: 1.28.0
+app_file: app.py
+pinned: false
+---
+
 # Pet Breed Classifier 🐾
 
 A machine learning model that classifies pet breeds from images using AutoGluon and Streamlit. This project includes a complete CI/CD pipeline for automated training and deployment to Hugging Face Spaces.
@@ -44,7 +55,7 @@ Pet_Breed_Classifier-master/
 │   ├── classification_report.txt
 │   ├── model_analysis.txt
 │   └── final_assessment.txt
-├── streamlit_app.py            # Web application
+├── app.py                      # Web application
 ├── run_pipeline.py             # Complete training pipeline
 ├── requirements.txt            # Python dependencies
 └── README.md                   # This file
@@ -79,7 +90,7 @@ Pet_Breed_Classifier-master/
 
 5. **Launch the Streamlit app**
    ```bash
-   streamlit run streamlit_app.py
+   streamlit run app.py
    ```
 
 ### CI/CD Deployment
