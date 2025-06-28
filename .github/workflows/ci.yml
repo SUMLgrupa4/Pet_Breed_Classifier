@@ -26,6 +26,14 @@ jobs:
       - name: Evaluation
         run: make eval
 
+      - name: Deploy to Hugging Face
+        env:
+          HF_USERNAME: ${{ secrets.HF_USERNAME }}
+          HF: ${{ secrets.HF_TOKEN_NEW }}
+          NAME: ${{ secrets.USER_NAME }}
+          EMAIL: ${{ secrets.USER_EMAIL }}
+        run: make deploy
+
       - name: Update Branch
         env:
           NAME: ${{ secrets.USER_NAME }}

@@ -44,6 +44,16 @@ hf-login:
 	huggingface-cli login --token $(HF) --add-to-git-credential
 
 push-hub:
+	@if [ -z "$(HF_USERNAME)" ]; then \
+		echo "Error: HF_USERNAME environment variable is not set"; \
+		echo "Please set HF_USERNAME to your Hugging Face username"; \
+		exit 1; \
+	fi
+	@if [ -z "$(HF)" ]; then \
+		echo "Error: HF environment variable is not set"; \
+		echo "Please set HF to your Hugging Face token"; \
+		exit 1; \
+	fi
 	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier ./app.py app.py --repo-type=space --commit-message="Sync App files"
 	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier ./models models --repo-type=space --commit-message="Sync Model"
 	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier ./outputs outputs --repo-type=space --commit-message="Sync Results"
