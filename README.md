@@ -7,6 +7,8 @@ sdk: streamlit
 sdk_version: 1.28.0
 app_file: app.py
 pinned: false
+license: mit
+python_version: "3.9"
 ---
 
 # Pet Breed Classifier 🐾
@@ -58,6 +60,8 @@ Pet_Breed_Classifier-master/
 ├── app.py                      # Web application
 ├── run_pipeline.py             # Complete training pipeline
 ├── requirements.txt            # Python dependencies
+├── docker-compose.yml          # Docker configuration
+├── Dockerfile                  # Docker image
 └── README.md                   # This file
 ```
 
@@ -92,6 +96,17 @@ Pet_Breed_Classifier-master/
    ```bash
    streamlit run app.py
    ```
+
+### Docker Deployment
+
+```bash
+# Build and run with Docker Compose
+docker-compose up --build
+
+# Or run with Docker directly
+docker build -t pet-breed-classifier .
+docker run -p 8501:8501 pet-breed-classifier
+```
 
 ### CI/CD Deployment
 
