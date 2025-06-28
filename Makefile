@@ -20,6 +20,16 @@ fetch-data:
 train:
 	python run_pipeline.py
 
+train-local:
+	cp pipeline_config_local.py pipeline_config.py
+	python run_pipeline.py
+	cp pipeline_config.py pipeline_config_local.py
+
+train-ci:
+	cp pipeline_config.py pipeline_config_ci.py
+	python run_pipeline.py
+	cp pipeline_config_ci.py pipeline_config.py
+
 eval:
 	echo "## Model Metrics" > report.md
 	cat ./outputs/classification_report.txt >> report.md
