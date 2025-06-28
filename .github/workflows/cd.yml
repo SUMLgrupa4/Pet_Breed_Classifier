@@ -17,4 +17,4 @@ jobs:
         env:
           HF: ${{ secrets.HF_TOKEN_NEW }}
           HF_USERNAME: s24998
-        run: make deploy HF=$HF HF_USERNAME=$HF_USERNAME 
+        run: make deploy HF=$HF
