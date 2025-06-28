@@ -2,19 +2,25 @@
 .venv/
 venv/
 
-# Large files and outputs (models, datasets, logs, predictions, etc.)
-models/autogluon_model/model.ckpt
-models/**/*.pkl
+# Training artifacts and logs
 models/**/*.log
-data/
+outputs/
+*.tmp
 
 # Python cache and compiled files
 __pycache__/
 *.py[cod]
 *.so
 *.log
-*.tmp
 
+# Training data (but keep metadata)
+data/pet_breeds/
+data/splits/
+
+# Keep essential model files for deployment
+# models/autogluon_model/model.ckpt - KEEP FOR DEPLOYMENT
+# models/**/*.pkl - KEEP FOR DEPLOYMENT  
+# data/metadata/ - KEEP FOR DEPLOYMENT
 
 # Model checkpoints and weights
 *.ckpt
