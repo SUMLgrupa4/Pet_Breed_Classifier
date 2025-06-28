@@ -31,13 +31,11 @@ eval-simple:
 	@echo "Report generated: report.md"
 
 hf-login:
-	git pull origin update
-    git switch update
-    pip install -U "huggingface_hub[cli]"
-    huggingface-cli login --token $(HF) --add-to-git-credential
+	pip install -U "huggingface_hub[cli]"
+	huggingface-cli login --token $(HF) --add-to-git-credential
 
 push-hub:
-	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier ./app.py app.py --repo-type=space --commit-message="Sync App files"
+	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier .app.py --repo-type=space --commit-message="Sync App files"
 	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier ./models models --repo-type=space --commit-message="Sync Model"
 	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier ./outputs outputs --repo-type=space --commit-message="Sync Results"
 
