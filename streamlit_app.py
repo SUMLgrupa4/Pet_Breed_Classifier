@@ -6,7 +6,6 @@ import pickle
 import time
 from PIL import Image
 from pathlib import Path
-import sys
 import tempfile
 
 # --- Custom CSS for Modern Look ---
@@ -33,6 +32,14 @@ def load_model():
     model_path = Path("models/autogluon_model")
     if not model_path.exists():
         return None, "No trained model found at models/autogluon_model."
+    
+    # Check for required model files
+    required_files = ['df_preprocessor.pkl', 'config.yaml']
+    missing_files = [f for f in required_files if not (model_path / f).exists()]
+    
+    if missing_files:
+        return None, f"Model incomplete. Missing files: {', '.join(missing_files)}"
+    
     try:
         predictor = MultiModalPredictor.load(str(model_path))
         return predictor, None
