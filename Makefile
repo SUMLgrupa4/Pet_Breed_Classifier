@@ -1,4 +1,4 @@
-.PHONY: install format train eval eval-simple hf-login push-hub deploy deploy-retrain test-local clean help update-branch docker-build docker-push docker-run docker-train-ci docker-train-compose docker-train-compose-detached fetch-data
+.PHONY: install format train eval eval-simple test-local clean help update-branch docker-build docker-push docker-run docker-train-ci docker-train-compose docker-train-compose-detached fetch-data train-local train-ci
 
 # Fast install for CI/CD (no AutoGluon)
 install:
@@ -43,19 +43,6 @@ eval-simple:
 	echo '\n## Confusion Matrix Plot' >> report.md
 	echo '![Confusion Matrix](./outputs/confusion_matrix.png)' >> report.md
 	@echo "Report generated: report.md"
-
-hf-login:
-	pip install -U "huggingface_hub[cli]"
-	huggingface-cli login --token $(HF) --add-to-git-credential
-
-push-hub:
-	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier .app.py  --repo-type=space --commit-message="Sync App files"
-	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier ./models models --repo-type=space --commit-message="Sync Model"
-	huggingface-cli upload $(HF_USERNAME)/pet-breed-classifier ./outputs outputs --repo-type=space --commit-message="Sync Results"
-
-deploy: hf-login push-hub
-
-deploy-retrain: train eval hf-login push-hub
 
 # Docker commands
 docker-build:
@@ -106,13 +93,13 @@ help:
 	@echo "  install         - Install dependencies"
 	@echo "  install-app     - Full install (with AutoGluon) - for local"
 	@echo "  format          - Format code with Black"
-	@echo "  fetch-data      - Fetch training data from Hugging Face"
-	@echo "  train           - Train new model (if you have new data)"
+	@echo "  fetch-data      - Fetch training data from Kaggle"
+	@echo "  train           - Train new model (fast config)"
+	@echo "  train-local     - Train new model (high quality config)"
+	@echo "  train-ci        - Train new model (CI config)"
 	@echo "  use-existing    - Use existing trained model"
-	@echo "  eval            - Generate evaluation report with CML"
-	@echo "  eval-simple     - Generate evaluation report without CML"
-	@echo "  deploy          - Deploy with existing model (RECOMMENDED)"
-	@echo "  deploy-retrain  - Deploy with retraining (only if new data)"
+	@echo "  eval            - Generate evaluation report"
+	@echo "  eval-simple     - Generate evaluation report (simple)"
 	@echo "  docker-build    - Build Docker image"
 	@echo "  docker-build-training - Build Docker image for training"
 	@echo "  docker-push     - Push Docker image to registry"
@@ -120,8 +107,8 @@ help:
 	@echo "  docker-run      - Run Docker container"
 	@echo "  docker-run-training - Run training in Docker container"
 	@echo "  docker-train-ci  - Run training in Docker container for CI"
-	@echo "  docker-train-compose - Run training in Docker container for CI using docker-compose"
-	@echo "  docker-train-compose-detached - Run training in Docker container for CI using docker-compose in detached mode"
+	@echo "  docker-train-compose - Run training in Docker container using docker-compose"
+	@echo "  docker-train-compose-detached - Run training in Docker container using docker-compose in detached mode"
 	@echo "  test-local      - Test Streamlit app locally"
 	@echo "  clean           - Clean all generated files (CAREFUL!)"
 	@echo "  help            - Show this help message"
