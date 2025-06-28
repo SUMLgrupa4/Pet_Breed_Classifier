@@ -52,7 +52,35 @@ def fetch_from_kaggle():
     try:
         # Initialize Kaggle API
         api = KaggleApi()
-        api.authenticate()
+        
+        # Try to authenticate using environment variables first (for Docker)
+        kaggle_username = os.getenv('KAGGLE_USERNAME')
+        kaggle_key = os.getenv('KAGGLE_KEY')
+        
+        if kaggle_username and kaggle_key:
+            print("🔑 Using Kaggle credentials from environment variables...")
+            # Create kaggle.json from environment variables
+            import json
+            kaggle_config = {
+                "username": kaggle_username,
+                "key": kaggle_key
+            }
+            
+            # Create .kaggle directory and config file
+            kaggle_dir = Path.home() / '.kaggle'
+            kaggle_dir.mkdir(exist_ok=True)
+            kaggle_config_file = kaggle_dir / 'kaggle.json'
+            
+            with open(kaggle_config_file, 'w') as f:
+                json.dump(kaggle_config, f)
+            
+            # Set proper permissions
+            os.chmod(kaggle_config_file, 0o600)
+            
+            api.authenticate()
+        else:
+            print("🔑 Using Kaggle credentials from ~/.kaggle/kaggle.json...")
+            api.authenticate()
         
         print("✅ Kaggle API authenticated successfully!")
         

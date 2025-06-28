@@ -14,24 +14,30 @@ import os
 def run_pipeline():
     print("\n Starting Full Training & Evaluation Pipeline...\n")
 
-    # Step 0: Fetch data if not already present
-    print(" Step 0: Checking for training data...")
+    # Step 0: Check for local training data
+    print(" Step 0: Checking for local training data...")
     data_dir = os.path.join(os.path.dirname(__file__), 'data', 'pet_breeds')
     
-    if not os.path.exists(data_dir) or not any(os.listdir(data_dir)):
-        print("   No training data found. Fetching from Kaggle...")
-        try:
-            from scripts.fetch_data import fetch_pet_breed_dataset
-            success = fetch_pet_breed_dataset()
-            if not success:
-                raise Exception("Failed to fetch data from Kaggle")
-            print("   ✅ Data fetched successfully!")
-        except Exception as e:
-            print(f"   ❌ Error fetching data: {e}")
-            print("   Please ensure you have Kaggle API credentials set up.")
-            return
-    else:
-        print("   ✅ Training data already present.")
+    if not os.path.exists(data_dir):
+        print("   ❌ Data directory not found: data/pet_breeds/")
+        print("   Please ensure your training data is in the data/pet_breeds/ directory.")
+        return
+    
+    # Count images in each breed directory
+    total_images = 0
+    for breed_dir in os.listdir(data_dir):
+        breed_path = os.path.join(data_dir, breed_dir)
+        if os.path.isdir(breed_path):
+            images = [f for f in os.listdir(breed_path) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+            total_images += len(images)
+            print(f"   {breed_dir}: {len(images)} images")
+    
+    if total_images == 0:
+        print("   ❌ No images found in data/pet_breeds/")
+        print("   Please add your training images to the appropriate breed directories.")
+        return
+    
+    print(f"   ✅ Found {total_images} total images across all breeds")
 
     # Step 1: Preprocess data
     print(" Step 1: Preprocessing data...")
