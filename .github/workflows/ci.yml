@@ -1,13 +1,14 @@
-name: Continuous Integration
+name: CI/CD Pipeline
 
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
-  test:
+  test-and-train:
     runs-on: ubuntu-latest
     
     steps:
@@ -49,25 +50,105 @@ jobs:
         print('✅ All imports successful')
         "
 
-    - name: Test data fetching
+    - name: Create directories
+      run: |
+        mkdir -p models
+        mkdir -p outputs
+        mkdir -p data/pet_breeds
+        mkdir -p data/metadata
+
+    - name: Fetch training data
       run: |
         python scripts/fetch_data.py
-        if [ -d "data/pet_breeds" ] && [ "$(ls -A data/pet_breeds)" ]; then
-          echo "✅ Data fetching successful"
-        else
-          echo "❌ Data fetching failed"
+      env:
+        KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+        KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+
+    - name: Check dataset exists
+      run: |
+        if [ ! -d "data/pet_breeds" ] || [ -z "$(ls -A data/pet_breeds)" ]; then
+          echo "Dataset not found! Please ensure the dataset is available."
           exit 1
         fi
+        echo "Dataset found, proceeding with training..."
+        ls -la data/pet_breeds/
 
-    - name: Test Docker build
+    - name: Train model
       run: |
-        docker build -t pet-breed-classifier:test .
-        docker run --rm pet-breed-classifier:test python -c "import streamlit; print('✅ Docker test successful')"
+        python run_pipeline.py
+      env:
+        PYTHONPATH: ${{ github.workspace }}
 
-    - name: Test summary
+    - name: Validate model artifacts
       run: |
-        echo "🎉 All CI tests passed!"
-        echo "✅ Code formatting is correct"
-        echo "✅ All imports work correctly"
-        echo "✅ Data fetching works"
-        echo "✅ Docker build works" 
+        if [ ! -d "models" ] || [ -z "$(ls -A models)" ]; then
+          echo "Model artifacts not created!"
+          exit 1
+        fi
+        echo "Model artifacts found:"
+        ls -la models/
+
+    - name: Upload model artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: trained-model-${{ github.sha }}
+        path: models/
+        retention-days: 30
+
+    - name: Upload outputs
+      uses: actions/upload-artifact@v4
+      with:
+        name: training-outputs-${{ github.sha }}
+        path: outputs/
+        retention-days: 30
+
+  build-and-deploy:
+    needs: test-and-train
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download model artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: trained-model-${{ github.sha }}
+        path: models/
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: |
+          ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:latest
+          ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Test Docker image
+      run: |
+        docker run --rm ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:latest python -c "import streamlit; print('✅ Streamlit imported successfully')"
+    
+    - name: Deployment summary
+      run: |
+        echo "🎉 Pipeline completed successfully!"
+        echo "✅ Code formatting and tests passed"
+        echo "✅ Model training completed"
+        echo "✅ Docker image built and pushed"
+        echo "✅ Ready for deployment"
+        echo ""
+        echo "📊 Model artifacts saved to models/"
+        echo "🐳 Docker image: ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:latest"
+        echo "🔗 Pull command: docker pull ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:latest" 
