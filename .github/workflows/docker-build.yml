@@ -22,7 +22,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./Dockerfile.optimized
+        file: ./Dockerfile
         push: false
         tags: pet-breed-classifier:latest
         cache-from: type=gha
