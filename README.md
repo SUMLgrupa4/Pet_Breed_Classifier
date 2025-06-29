@@ -13,7 +13,7 @@ python_version: "3.9"
 
 # Pet Breed Classifier 🐾
 
-A machine learning model that classifies pet breeds from images using AutoGluon and Streamlit. This project includes a complete CI/CD pipeline for automated training and deployment to Hugging Face Spaces.
+A machine learning model that classifies pet breeds from images using AutoGluon and Streamlit. This project includes a complete CI/CD pipeline for automated training and deployment.
 
 ## 🚀 Features
 
@@ -38,36 +38,45 @@ A machine learning model that classifies pet breeds from images using AutoGluon 
 - **Streamlit**: Web application framework
 - **Python 3.9+**: Core programming language
 - **GitHub Actions**: CI/CD automation
-- **Hugging Face Spaces**: Model deployment platform
+- **Docker**: Containerization
 
 ## 📁 Project Structure
 
 ```
 Pet_Breed_Classifier-master/
 ├── .github/workflows/          # CI/CD workflows
-│   ├── deploy.yml              # Main deployment workflow
-│   └── train-only.yml          # Training-only workflow
+│   ├── train-and-deploy.yml    # Training and deployment workflow
+│   ├── tests.yml               # Testing workflow
+│   ├── ci.yml                  # Continuous integration
+│   └── cd.yml                  # Continuous deployment
 ├── scripts/                    # Training scripts
 │   ├── preprocess.py           # Data preprocessing
 │   ├── train_model.py          # Model training
-│   └── validate_model.py       # Model validation
+│   ├── validate_model.py       # Model validation
+│   └── fetch_data.py           # Data fetching
 ├── models/                     # Trained models
 ├── outputs/                    # Training results
-│   ├── confusion_matrix.png    # Confusion matrix visualization
-│   ├── classification_report.txt
-│   ├── model_analysis.txt
-│   └── final_assessment.txt
+├── data/                       # Training data
+│   ├── pet_breeds/             # Pet images by breed
+│   └── metadata/               # Labels and metadata
 ├── app.py                      # Web application
 ├── run_pipeline.py             # Complete training pipeline
 ├── requirements.txt            # Python dependencies
 ├── docker-compose.yml          # Docker configuration
-├── Dockerfile                  # Docker image
+├── Dockerfile.optimized        # Optimized Docker image
+├── Dockerfile.production       # Production Docker image
 └── README.md                   # This file
 ```
 
 ## 🚀 Quick Start
 
-### Local Development
+### Option 1: GitHub Actions (Recommended)
+
+1. **Push to GitHub** - The workflows will run automatically
+2. **Set up secrets** (see Setup section below)
+3. **Monitor progress** in the Actions tab
+
+### Option 2: Local Development
 
 1. **Clone the repository**
    ```bash
@@ -80,11 +89,9 @@ Pet_Breed_Classifier-master/
    pip install -r requirements.txt
    ```
 
-3. **Add your training data**
-   ```
-   data/
-   ├── images/                  # Your pet images
-   └── metadata/                # Labels and metadata
+3. **Fetch training data**
+   ```bash
+   python scripts/fetch_data.py
    ```
 
 4. **Run the training pipeline**
@@ -97,26 +104,20 @@ Pet_Breed_Classifier-master/
    streamlit run app.py
    ```
 
-### Docker Deployment
+### Option 3: Docker Deployment
 
 ```bash
 # Build and run with Docker Compose
 docker-compose up --build
 
 # Or run with Docker directly
-docker build -t pet-breed-classifier .
+docker build -f Dockerfile.production -t pet-breed-classifier .
 docker run -p 8501:8501 pet-breed-classifier
 ```
 
-### CI/CD Deployment
+## 🔧 Setup
 
-#### Prerequisites
-
-1. **GitHub Repository**: Push your code to GitHub
-2. **Docker Hub Account**: Create an account at [hub.docker.com](https://hub.docker.com)
-3. **Kaggle Account**: Create an account at [kaggle.com](https://kaggle.com)
-
-#### Setup Steps
+### GitHub Actions Setup
 
 1. **Add GitHub Secrets**
    - Go to your GitHub repository → Settings → Secrets and variables → Actions
@@ -125,71 +126,62 @@ docker run -p 8501:8501 pet-breed-classifier
      - `KAGGLE_KEY`: Your Kaggle API key
      - `DOCKER_USERNAME`: Your Docker Hub username
      - `DOCKER_PASSWORD`: Your Docker Hub password/token
-     - `USER_NAME`: Your name
-     - `USER_EMAIL`: Your email
 
-2. **Trigger Deployment**
-   - **Automatic**: Push to `main` or `master` branch
-   - **Manual**: Go to Actions tab → "Continuous Integration" → Run workflow
+2. **Trigger Workflows**
+   - **Automatic**: Push to `main` or `develop` branch
+   - **Manual**: Go to Actions tab → Select workflow → Run workflow
 
-3. **Access Your Docker Images**
-   - Training image: `your-username/pet-breed-classifier:training-data`
-   - Production image: `your-username/pet-breed-classifier:latest`
+### Available Workflows
 
-### Docker-Based CI Pipeline
+#### 1. **Model Training and Deployment** (`train-and-deploy.yml`)
+- ✅ Fetches training data from Kaggle
+- ✅ Trains the model using your pipeline
+- ✅ Builds Docker image with trained model
+- ✅ Saves artifacts for later use
 
-The project now includes a comprehensive Docker-based CI pipeline that:
+#### 2. **Basic Tests** (`tests.yml`)
+- ✅ Tests all imports (Streamlit, PyTorch, AutoGluon)
+- ✅ Tests data fetching functionality
+- ✅ Tests preprocessing pipeline
+- ✅ Tests Docker build process
+- ✅ Validates app functionality
 
-1. **Fetches Training Data**: Downloads the pet breed dataset from Kaggle
-2. **Builds Training Image**: Creates a Docker image with all training dependencies
-3. **Runs Training Pipeline**: Executes the complete training pipeline in a containerized environment
-4. **Builds Production Image**: Creates a production-ready image with the trained model
-5. **Pushes to Registry**: Registers both training and production images to Docker Hub
+## 🐳 Docker Images
 
-#### Data Fetching
+### Available Dockerfiles
 
-The CI pipeline automatically fetches training data from Kaggle:
+- **`Dockerfile.optimized`**: Space-efficient build with multi-stage optimization
+- **`Dockerfile.production`**: Production-ready with security features
+- **`Dockerfile.training`**: Training-specific with all dependencies
 
-```bash
-# Fetch data manually
-make fetch-data
-
-# Or run the script directly
-python scripts/fetch_data.py
-```
-
-The data fetching script:
-- Downloads from Kaggle dataset: `aseemdandgaval/23-pet-breeds-image-classification`
-- Falls back to creating a sample dataset if the main dataset is unavailable
-- Creates the proper directory structure expected by the training pipeline
-- Generates the label mapping file automatically
-
-#### Docker Images
-
-- **Training Image** (`pet-breed-classifier:training-data`): Contains all dependencies for model training
-- **Production Image** (`pet-breed-classifier:latest`): Optimized for serving the trained model
-
-#### Local Docker Training
+### Building Images
 
 ```bash
-# Fetch data and build training image
-make fetch-data
-make docker-build-training
+# Optimized build (recommended)
+docker build -f Dockerfile.optimized -t pet-breed-classifier:latest .
 
-# Run training pipeline
-make docker-train-ci
+# Production build
+docker build -f Dockerfile.production -t pet-breed-classifier:prod .
 
-# Or use docker-compose for training
-make docker-train-compose
+# Training build
+docker build -f Dockerfile.training -t pet-breed-classifier:training .
 ```
 
-#### Docker Registry Integration
+### Running Containers
 
-The CI pipeline automatically:
-- Builds and pushes training images to Docker Hub
-- Tags images with appropriate versions
-- Maintains separate images for training and production
-- Ensures reproducible training environments
+```bash
+# Run with volume mounts (recommended)
+docker run -d \
+  -p 8501:8501 \
+  -v $(pwd)/data:/app/data \
+  -v $(pwd)/models:/app/models \
+  -v $(pwd)/outputs:/app/outputs \
+  --name pet-breed-classifier \
+  pet-breed-classifier:latest
+
+# Run with Docker Compose
+docker-compose up --build -d
+```
 
 ## 📈 Training Results
 
@@ -200,60 +192,44 @@ After each training run, the following artifacts are generated:
 - Helps identify which breeds are most/least accurately classified
 
 ### 📋 Classification Report
-- Detailed per-class metrics (precision, recall, F1-score)
-- Overall accuracy and macro/micro averages
+- Detailed precision, recall, and F1-score for each breed
+- Overall model performance metrics
 
-### 📝 Model Analysis
+### 📊 Model Analysis
 - Model size and complexity analysis
 - Training time and resource usage
 
-### ✅ Final Assessment
+### 🎯 Final Assessment
 - Summary of model performance
-- Deployment readiness evaluation
+- Recommendations for improvement
 
-## 🔧 Configuration
+## 🔍 Troubleshooting
 
-### Training Parameters
-Edit `pipeline_config.py` to customize:
-- Model architecture
-- Training hyperparameters
-- Data preprocessing settings
-- Validation split ratios
+### Common Issues
 
-### CI/CD Settings
-Modify `.github/workflows/deploy.yml` to:
-- Change deployment triggers
-- Adjust resource allocation
-- Customize deployment settings
+1. **"No space left on device"**
+   - ✅ Fixed! Use `Dockerfile.optimized` for smaller images
+   - ✅ Added `.dockerignore` to reduce build context
 
-## 📱 Using the App
+2. **"Module not found: scripts"**
+   - ✅ Fixed! Updated `PYTHONPATH` in Dockerfiles
+   - ✅ Removed `scripts/` from `.dockerignore`
 
-1. **Upload Image**: Click "Browse files" to upload a pet image
-2. **Get Prediction**: Click "Classify Breed" for instant results
-3. **View Results**: See breed prediction with confidence score
-4. **Check Performance**: Navigate to "Model Info" for detailed metrics
+3. **Dependency conflicts**
+   - ✅ Fixed! Updated `requirements.txt` with compatible versions
+   - ✅ Added version ranges to prevent conflicts
 
-## 🤝 Contributing
+### Getting Help
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. Check the **Actions** tab for detailed error logs
+2. Verify all required files are present
+3. Ensure GitHub secrets are properly configured
+4. Use the test workflow to validate your setup
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- AutoGluon team for the excellent multi-modal framework
-- Streamlit for the beautiful web app framework
-- Hugging Face for providing free model hosting
-- The open-source community for inspiration and support
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ---
 
-**Built with ❤️ using AutoGluon & Streamlit**
-
-*For questions or support, please open an issue on GitHub.* 
+**🎉 Ready to classify some pets? Push your code and watch the magic happen!** 🚀 

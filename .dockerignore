@@ -75,9 +75,6 @@ models/*
 # Outputs
 outputs/
 
-# Scripts (if not needed in container)
-scripts/
-
 # Notebooks
 *.ipynb
 
