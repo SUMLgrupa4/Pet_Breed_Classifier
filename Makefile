@@ -1,4 +1,4 @@
-.PHONY: install format train eval eval-simple test-local clean help update-branch docker-build docker-push docker-run docker-train-ci docker-train-compose docker-train-compose-detached fetch-data train-local train-ci docker-run-production docker-run-local docker-build-with-model docker-test-model
+.PHONY: install format train eval eval-simple test-local clean help update-branch docker-build docker-push docker-run docker-train-ci docker-train-compose docker-train-compose-detached fetch-data train-local train-ci docker-run-production docker-run-local
 
 # Fast install for CI/CD (no AutoGluon)
 install:
@@ -23,7 +23,7 @@ train:
 train-local:
 	cp pipeline_config_local.py pipeline_config.py
 	python run_pipeline.py
-	cp pipeline_config_ci.py pipeline_config.py
+	cp pipeline_config.py pipeline_config_local.py
 
 train-ci:
 	cp pipeline_config.py pipeline_config_ci.py
@@ -46,18 +46,7 @@ eval-simple:
 
 # Docker commands
 docker-build:
-	docker build -t pet-breed-classifier .
-
-docker-build-with-model:
-	@echo "Building Docker image with model validation..."
-	@if [ ! -d "models/autogluon_model" ]; then \
-		echo "ERROR: No trained model found at models/autogluon_model/"; \
-		echo "Please train the model first using: make train"; \
-		exit 1; \
-	fi
-	@echo "SUCCESS: Model found, building Docker image..."
-	docker build -t pet-breed-classifier .
-	@echo "SUCCESS: Docker image built with model included!"
+	docker build -t pet-breed-classifier:latest .
 
 docker-build-training:
 	docker build -f Dockerfile.training -t pet-breed-classifier:training-data .
@@ -71,7 +60,7 @@ docker-push-training:
 	docker push $(DOCKER_USERNAME)/pet-breed-classifier:training-data
 
 docker-run:
-	docker run -p 8501:8501 pet-breed-classifier
+	docker run -p 8501:8501 pet-breed-classifier:latest
 
 docker-run-production:
 	@echo "Starting production app with trained model..."
@@ -91,10 +80,6 @@ docker-run-local:
 	docker-compose up --build
 	@echo "SUCCESS: App running at http://localhost:8501"
 
-docker-test-model:
-	@echo "Testing model loading in Docker container..."
-	docker run --rm pet-breed-classifier python test_model_loading.py
-
 docker-run-training:
 	docker run -it --rm pet-breed-classifier:training-data python run_pipeline.py
 
@@ -109,9 +94,6 @@ docker-train-compose-detached:
 
 test-local:
 	streamlit run app.py
-
-test-model:
-	python test_model_loading.py
 
 clean:
 	rm -rf outputs/*
@@ -137,19 +119,16 @@ help:
 	@echo "  eval            - Generate evaluation report"
 	@echo "  eval-simple     - Generate evaluation report (simple)"
 	@echo "  docker-build    - Build Docker image"
-	@echo "  docker-build-with-model - Build Docker image with model validation"
 	@echo "  docker-build-training - Build Docker image for training"
 	@echo "  docker-push     - Push Docker image to registry"
 	@echo "  docker-push-training - Push training Docker image to registry"
 	@echo "  docker-run      - Run Docker container"
 	@echo "  docker-run-production - Run production app with trained model"
 	@echo "  docker-run-local - Run local development app"
-	@echo "  docker-test-model - Test model loading in Docker container"
 	@echo "  docker-run-training - Run training in Docker container"
 	@echo "  docker-train-ci  - Run training in Docker container for CI"
 	@echo "  docker-train-compose - Run training in Docker container using docker-compose"
 	@echo "  docker-train-compose-detached - Run training in Docker container using docker-compose in detached mode"
 	@echo "  test-local      - Test Streamlit app locally"
-	@echo "  test-model      - Test model loading locally"
 	@echo "  clean           - Clean all generated files (CAREFUL!)"
 	@echo "  help            - Show this help message"

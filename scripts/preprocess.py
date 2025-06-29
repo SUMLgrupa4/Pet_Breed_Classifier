@@ -24,11 +24,11 @@ def preprocess_data(parameters):
     print(f"   raw_data_path: {raw_data_path}")
     print(f"   raw_data_path exists: {os.path.exists(raw_data_path)}")
     print(f"   Current working directory: {os.getcwd()}")
-
+    
     # Check if we're in Docker
     in_docker = os.path.exists('/.dockerenv')
     print(f"   In Docker: {in_docker}")
-
+    
     # List contents of data directory
     data_dir = os.path.join(BASE_DIR, 'data')
     if os.path.exists(data_dir):
@@ -93,7 +93,7 @@ def preprocess_data(parameters):
     os.makedirs(outputs_dir, exist_ok=True)
     os.makedirs(splits_dir, exist_ok=True)
     os.makedirs(metadata_dir, exist_ok=True)
-
+    
     plt.figure(figsize=(12, 6))
     class_counts.sort_index().plot(kind='bar')
     plt.title("Class Distribution")
@@ -126,7 +126,7 @@ def preprocess_data(parameters):
     # Create label map before encoding
     unique_labels = sorted(df['label'].unique())
     label_map = {i: label for i, label in enumerate(unique_labels)}
-
+    
     # Save label map
     label_map_path = os.path.join(metadata_dir, 'label_map.pkl')
     with open(label_map_path, 'wb') as f:

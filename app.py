@@ -25,63 +25,48 @@ body { background: #f6f8fa; }
 </style>
 """, unsafe_allow_html=True)
 
-
 # --- Utility Functions ---
 @st.cache_resource
 def load_model():
     """Load the trained AutoGluon model from the models directory or Hugging Face Hub."""
     from autogluon.multimodal import MultiModalPredictor
     import yaml
-
+    
     # Try loading from local path first
     model_path = Path("models/autogluon_model")
-
-    # Check if we're in Docker and provide helpful debugging info
-    in_docker = os.path.exists('/.dockerenv')
-    if in_docker:
-        print("Running in Docker container")
-        print(f"Current working directory: {os.getcwd()}")
-        print(f"Model path: {model_path.absolute()}")
-        print(f"Model path exists: {model_path.exists()}")
-        if model_path.exists():
-            print(f"Model directory contents: {list(model_path.iterdir())}")
-
     if model_path.exists():
         # Check for required model files
         required_files = ['df_preprocessor.pkl', 'config.yaml', 'model.ckpt']
         missing_files = [f for f in required_files if not (model_path / f).exists()]
-
+        
         if missing_files:
-            error_msg = f"Model incomplete. Missing files: {', '.join(missing_files)}"
-            if in_docker:
-                error_msg += " (Docker: Check if model was properly copied during build)"
-            return None, error_msg
-
+            return None, f"Model incomplete. Missing files: {', '.join(missing_files)}"
+        
         try:
             # Load model configuration to verify architecture
             config_path = model_path / 'config.yaml'
             if config_path.exists():
                 with open(config_path, 'r') as f:
                     config = yaml.safe_load(f)
-
+                
                 # Extract model architecture info
                 model_arch = config.get('model', {}).get('timm_image', {}).get('checkpoint_name', 'unknown')
                 print(f"Loading model with architecture: {model_arch}")
-
+            
             # Load the model without specifying architecture (let AutoGluon use saved config)
             predictor = MultiModalPredictor.load(str(model_path))
-
+            
             # Verify model loaded correctly
             if hasattr(predictor, 'class_labels'):
                 print(f"Model loaded successfully with {len(predictor.class_labels)} classes")
             else:
                 print("Model loaded but class labels not found")
-
+                
             return predictor, None
-
+            
         except Exception as e:
             error_msg = str(e)
-
+            
             # Provide specific error messages for common issues
             if "Missing key(s) in state_dict" in error_msg or "size mismatch" in error_msg:
                 return None, f"Model architecture mismatch. The saved model was trained with a different architecture than expected. Please retrain the model or check the configuration. Error: {error_msg}"
@@ -89,15 +74,7 @@ def load_model():
                 return None, f"GPU/CUDA error. Try running on CPU. Error: {error_msg}"
             else:
                 return None, f"Error loading model: {error_msg}"
-    else:
-        # Model directory not found
-        error_msg = "No trained model found at models/autogluon_model."
-        if in_docker:
-            error_msg += " (Docker: The model was not copied into the container during build. Check .dockerignore and Dockerfile)"
-        else:
-            error_msg += " Please train the model first using: python run_pipeline.py"
-        return None, error_msg
-
+    
     # If local model not found, try loading from Hugging Face Hub
     try:
         print("Local model not found, attempting to load from Hugging Face Hub...")
@@ -106,7 +83,6 @@ def load_model():
         return None, "Local model not found. Hugging Face Hub loading not configured."
     except Exception as e:
         return None, f"Failed to load model from Hugging Face Hub: {e}"
-
 
 @st.cache_data
 def load_label_map():
@@ -120,7 +96,6 @@ def load_label_map():
     except Exception as e:
         return {}, f"Error loading label map: {e}"
 
-
 def preprocess_image(image):
     """Preprocess uploaded image for prediction."""
     if image.mode != 'RGB':
@@ -131,7 +106,6 @@ def preprocess_image(image):
         new_size = tuple(int(dim * ratio) for dim in image.size)
         image = image.resize(new_size, Image.Resampling.LANCZOS)
     return image
-
 
 def predict_breed(model, image, label_map):
     """Predict breed from image using the model."""
@@ -163,19 +137,15 @@ def predict_breed(model, image, label_map):
     except Exception as e:
         return None, None, None, f"Prediction error: {e}"
 
-
 def get_supported_breeds(label_map):
     if label_map:
         return [breed.replace('_', ' ').title() for breed in label_map.values()]
     else:
         return [
-            "Golden Retriever", "Persian Cat", "Shiba Inu", "Maine Coon", "Labrador", "German Shepherd", "Beagle",
-            "Boxer", "Bulldog",
-            "Chihuahua", "Corgi", "Dachshund", "Husky", "Pomeranian", "Pug", "Rottweiler", "Yorkshire Terrier",
-            "American Shorthair",
+            "Golden Retriever", "Persian Cat", "Shiba Inu", "Maine Coon", "Labrador", "German Shepherd", "Beagle", "Boxer", "Bulldog",
+            "Chihuahua", "Corgi", "Dachshund", "Husky", "Pomeranian", "Pug", "Rottweiler", "Yorkshire Terrier", "American Shorthair",
             "Mumbai Cat", "Ragdoll Cat", "Siamese Cat", "Sphynx", "Abyssinian"
         ]
-
 
 # --- Sidebar Navigation ---
 st.sidebar.image("https://cdn-icons-png.flaticon.com/512/616/616408.png", width=60)
@@ -193,8 +163,7 @@ with st.sidebar:
     if label_map:
         st.markdown(f'<div class="status-success">✅ {len(label_map)} Breeds</div>', unsafe_allow_html=True)
     else:
-        st.markdown(f'<div class="status-warning">⚠️ {label_status or "Label map missing"}</div>',
-                    unsafe_allow_html=True)
+        st.markdown(f'<div class="status-warning">⚠️ {label_status or "Label map missing"}</div>', unsafe_allow_html=True)
     st.markdown("---")
     st.header("Navigation")
     nav = st.radio("Go to:", ["Classify Image", "Model Info", "About"], index=0)
@@ -203,8 +172,7 @@ with st.sidebar:
 
 # --- Main Content ---
 st.markdown('<h1 class="main-header">🐾 Pet Breed Classifier</h1>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Upload a photo of your pet and discover its breed in seconds!</div>',
-            unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Upload a photo of your pet and discover its breed in seconds!</div>', unsafe_allow_html=True)
 
 if nav == "Classify Image":
     tab1, tab2 = st.tabs(["🐶 Upload & Predict", "📋 Supported Breeds"])
@@ -226,7 +194,6 @@ if nav == "Classify Image":
                         else:
                             # Demo mode fallback
                             import random
-
                             pred = random.choice(supported_breeds)
                             inf_time = 0.2
                             conf = np.random.uniform(0.7, 0.95)
@@ -287,5 +254,4 @@ elif nav == "About":
 
 # --- Footer ---
 st.markdown("---")
-st.markdown("<div style='text-align: center; color: #666;'>Built with ❤️ using AutoGluon and Streamlit</div>",
-            unsafe_allow_html=True)
+st.markdown("<div style='text-align: center; color: #666;'>Built with ❤️ using AutoGluon and Streamlit</div>", unsafe_allow_html=True)
