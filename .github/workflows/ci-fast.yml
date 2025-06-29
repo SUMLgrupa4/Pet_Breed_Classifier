@@ -1,7 +1,7 @@
-name: CI - Quick Testing
+name: CI - Fast Validation
 
 # This workflow is for quick CI testing only
-# For full training and deployment, use train-and-deploy.yml
+# For full training and deployment, use main-pipeline.yml
 on:
   pull_request:
     branches: [ main, master, develop ]
@@ -117,4 +117,4 @@ jobs:
         echo "SUCCESS: Docker build tested"
         echo ""
         echo "NOTE: This is a quick CI test only."
-        echo "For full training and deployment, use the train-and-deploy.yml workflow." 
+        echo "For full training and deployment, use the main-pipeline.yml workflow." 
