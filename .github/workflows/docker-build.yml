@@ -29,117 +29,20 @@ jobs:
           echo "version=${{ github.event.inputs.model_version }}" >> $GITHUB_OUTPUT
           echo "Using manual model version: ${{ github.event.inputs.model_version }}"
         else
+          # Try to find the latest model artifact
           echo "Looking for latest model artifact..."
-          
-          # Try to find the most recent successful workflow run
-          # We'll use a more intelligent approach
-          
-          # Get current timestamp for fallback
-          CURRENT_TIME=$(date +%Y%m%d-%H%M%S)
-          
-          # For automatic runs, we'll use a timestamp that's likely to exist
-          # We'll subtract a few minutes to account for the time between pipeline completion and Docker build
-          # This is a heuristic approach since we can't directly query artifacts
-          
-          # Calculate a timestamp that's likely to exist (subtract 5 minutes)
-          TIMESTAMP=$(date -d '5 minutes ago' +%Y%m%d-%H%M%S 2>/dev/null || date +%Y%m%d-%H%M%S)
-          
-          echo "version=$TIMESTAMP" >> $GITHUB_OUTPUT
-          echo "Using estimated version: $TIMESTAMP"
-          echo "Note: If this fails, please run the main pipeline first or specify a manual version"
-          echo ""
-          echo "TROUBLESHOOTING:"
-          echo "1. Ensure the main pipeline has completed successfully"
-          echo "2. Check that model artifacts were uploaded"
-          echo "3. Use manual workflow dispatch with a known model version"
+          # For now, we'll use a timestamp-based version
+          echo "version=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
+          echo "Using auto-generated version: $(date +%Y%m%d-%H%M%S)"
         fi
       
     - name: Download model artifacts
-      id: download_artifacts
       uses: actions/download-artifact@v4
       with:
         name: trained-model-${{ steps.model_version.outputs.version }}
         path: .
-      continue-on-error: true
       
-    - name: Check if artifacts were downloaded
-      run: |
-        if [ -d "models/autogluon_model" ] && [ -f "data/metadata/label_map.pkl" ]; then
-          echo "✅ Model artifacts found and downloaded successfully"
-          echo "artifact_found=true" >> $GITHUB_OUTPUT
-        else
-          echo "❌ Model artifacts not found"
-          echo "artifact_found=false" >> $GITHUB_OUTPUT
-          
-          # Try to find any available artifacts
-          echo "Looking for any available model artifacts..."
-          
-          # List all artifacts from recent runs (this is a workaround)
-          echo "Available artifacts from recent runs:"
-          # Note: GitHub Actions doesn't provide a direct way to list artifacts
-          # We'll provide helpful error message
-          
-          echo ""
-          echo "ERROR: No model artifacts found for version: ${{ steps.model_version.outputs.version }}"
-          echo ""
-          echo "SOLUTIONS:"
-          echo "1. Run the main pipeline first to generate model artifacts"
-          echo "2. Use manual workflow dispatch and specify a known model version"
-          echo "3. Check if the main pipeline completed successfully"
-          echo ""
-          echo "To run main pipeline manually:"
-          echo "- Go to Actions → Main Pipeline - Train and Deploy → Run workflow"
-          echo ""
-          echo "To specify a manual version:"
-          echo "- Go to Actions → Docker Build and Push → Run workflow"
-          echo "- Enter the model version in the 'Model version' field"
-          echo ""
-          exit 1
-        fi
-        
-    - name: List available model versions (for reference)
-      if: steps.download_artifacts.outcome == 'failure'
-      run: |
-        echo "🔍 Checking recent workflow runs for available model versions..."
-        echo ""
-        echo "Recent workflow runs that may have model artifacts:"
-        echo "1. Check the 'Actions' tab in your GitHub repository"
-        echo "2. Look for successful 'Main Pipeline - Train and Deploy' runs"
-        echo "3. The model version is in the format: YYYYMMDD-HHMMSS"
-        echo ""
-        echo "Example model versions from recent runs:"
-        echo "- Check the 'train-model' job output for the generated version"
-        echo "- Look for 'trained-model-YYYYMMDD-HHMMSS' artifacts"
-        echo ""
-        echo "To find the exact version:"
-        echo "1. Go to Actions → Main Pipeline - Train and Deploy"
-        echo "2. Click on a successful run"
-        echo "3. Look for 'Generate model version' step output"
-        echo "4. Use that version in the Docker build workflow"
-        echo ""
-        echo "IMMEDIATE SOLUTIONS:"
-        echo "1. Run the main pipeline first:"
-        echo "   - Go to Actions → Main Pipeline - Train and Deploy → Run workflow"
-        echo "   - Wait for it to complete successfully"
-        echo "   - Then run this Docker build workflow"
-        echo ""
-        echo "2. Use manual workflow dispatch with known version:"
-        echo "   - Go to Actions → Docker Build and Push → Run workflow"
-        echo "   - Enter the exact model version (e.g., 20250629-215638)"
-        echo "   - Leave 'Custom Docker tag' empty unless needed"
-        echo ""
-        echo "3. Check if artifacts exist:"
-        echo "   - Go to Actions → Artifacts"
-        echo "   - Look for 'trained-model-*' artifacts"
-        echo "   - Use the version number from the artifact name"
-        echo ""
-        echo "4. Recent workflow runs to check:"
-        echo "   - Look for runs with green checkmarks (✅)"
-        echo "   - Check the 'train-model' job for version output"
-        echo "   - The version format is: YYYYMMDD-HHMMSS"
-        
     - name: Verify model files for Docker build
-      if: steps.download_artifacts.outcome == 'success'
       run: |
         echo "Verifying model files for Docker build..."
         echo "Current directory: $(pwd)"
@@ -179,18 +82,15 @@ jobs:
         echo "SUCCESS: All model files verified for Docker build"
     
     - name: Set up Docker Buildx
-      if: steps.download_artifacts.outcome == 'success'
       uses: docker/setup-buildx-action@v3
     
     - name: Login to Docker Hub
-      if: steps.download_artifacts.outcome == 'success'
       uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
     
     - name: Generate Docker tags
-      if: steps.download_artifacts.outcome == 'success'
       id: docker_tags
       run: |
         # Generate tags
@@ -213,7 +113,6 @@ jobs:
         fi
     
     - name: Build and push Docker image
-      if: steps.download_artifacts.outcome == 'success'
       uses: docker/build-push-action@v5
       with:
         context: .
@@ -232,7 +131,6 @@ jobs:
           GIT_COMMIT=${{ github.sha }}
     
     - name: Test Docker image
-      if: steps.download_artifacts.outcome == 'success'
       run: |
         echo "Testing Docker image..."
         docker run --rm ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:latest python -c "
@@ -251,7 +149,6 @@ jobs:
         "
     
     - name: Test Streamlit app in Docker
-      if: steps.download_artifacts.outcome == 'success'
       run: |
         echo "Testing Streamlit app in Docker..."
         docker run --rm -d --name test-streamlit ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:latest
@@ -267,33 +164,18 @@ jobs:
     steps:
     - name: Docker build summary
       run: |
-        if [ "${{ needs.build-and-push-docker.result }}" == "success" ]; then
-          echo "✅ Docker build completed successfully!"
-          echo "SUCCESS: Docker image built and pushed"
-          echo "SUCCESS: Docker image tested"
-          echo ""
-          echo "Model Version: ${{ needs.build-and-push-docker.outputs.model-version }}"
-          echo "Docker Images:"
-          echo "- ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:latest"
-          echo "- ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:${{ needs.build-and-push-docker.outputs.model-version }}"
-          echo "- ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:${{ github.sha }}"
-          if [ "${{ github.event.inputs.docker_tag }}" != "" ]; then
-            echo "- ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:${{ github.event.inputs.docker_tag }}"
-          fi
-          echo ""
-          echo "To run the Docker image:"
-          echo "docker run -p 8501:8501 ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:latest"
-        else
-          echo "❌ Docker build failed or was skipped"
-          echo ""
-          echo "REASON: Model artifacts were not found"
-          echo ""
-          echo "SOLUTIONS:"
-          echo "1. Run the main pipeline first to generate model artifacts"
-          echo "2. Use manual workflow dispatch with a known model version"
-          echo "3. Check that the main pipeline completed successfully"
-          echo ""
-          echo "Next steps:"
-          echo "- Go to Actions → Main Pipeline - Train and Deploy → Run workflow"
-          echo "- Wait for completion, then retry Docker build"
-        fi 
+        echo "Docker build completed successfully!"
+        echo "SUCCESS: Docker image built and pushed"
+        echo "SUCCESS: Docker image tested"
+        echo ""
+        echo "Model Version: ${{ needs.build-and-push-docker.outputs.model-version }}"
+        echo "Docker Images:"
+        echo "- ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:latest"
+        echo "- ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:${{ needs.build-and-push-docker.outputs.model-version }}"
+        echo "- ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:${{ github.sha }}"
+        if [ "${{ github.event.inputs.docker_tag }}" != "" ]; then
+          echo "- ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:${{ github.event.inputs.docker_tag }}"
+        fi
+        echo ""
+        echo "To run the Docker image:"
+        echo "docker run -p 8501:8501 ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:latest" 
