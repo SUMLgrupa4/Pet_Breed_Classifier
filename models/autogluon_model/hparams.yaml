@@ -1,7 +1,7 @@
 optim_type: adamw
 lr_choice: layerwise_decay
 lr_schedule: cosine_decay
-lr: 0.0001
+lr: 0.0004
 lr_decay: 0.9
 end_lr: 0
 lr_mult: 1
