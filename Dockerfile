@@ -41,21 +41,35 @@ RUN mkdir -p \
     models \
     outputs
 
-# Check for trained model and set demo mode if not available
+# Verify and validate the trained model
 RUN echo "Checking for trained model..." && \
-    if [ -d "models/autogluon_model" ] && [ -f "models/autogluon_model/config.yaml" ] && [ -f "models/autogluon_model/df_preprocessor.pkl" ]; then \
+    if [ -d "models/autogluon_model" ]; then \
         echo "SUCCESS: Trained model directory found" && \
         ls -la models/autogluon_model/ && \
-        echo "SUCCESS: Model config found" && \
-        echo "SUCCESS: Data preprocessor found" && \
+        if [ -f "models/autogluon_model/model.ckpt" ]; then \
+            echo "SUCCESS: Model checkpoint found" && \
+            echo "Model size: $(du -sh models/autogluon_model/model.ckpt | cut -f1)" && \
+        else \
+            echo "ERROR: Model checkpoint not found!" && \
+            exit 1 && \
+        fi && \
+        if [ -f "models/autogluon_model/config.yaml" ]; then \
+            echo "SUCCESS: Model config found" && \
+        else \
+            echo "ERROR: Model config not found!" && \
+            exit 1 && \
+        fi && \
+        if [ -f "models/autogluon_model/df_preprocessor.pkl" ]; then \
+            echo "SUCCESS: Data preprocessor found" && \
+        else \
+            echo "ERROR: Data preprocessor not found!" && \
+            exit 1 && \
+        fi && \
         echo "SUCCESS: All required model files found" && \
-        echo "DEMO_MODE=false" > /app/demo_mode.txt && \
-        echo "Running in FULL MODE with trained model" && \
     else \
-        echo "WARNING: No trained model found at models/autogluon_model/" && \
-        echo "Running in DEMO MODE - will use placeholder model" && \
-        echo "DEMO_MODE=true" > /app/demo_mode.txt && \
-        echo "To use full model, ensure model artifacts are available during build" && \
+        echo "ERROR: No trained model found at models/autogluon_model/" && \
+        echo "Please ensure the model is trained and available before building the Docker image" && \
+        exit 1 && \
     fi
 
 # Add non-root user for security

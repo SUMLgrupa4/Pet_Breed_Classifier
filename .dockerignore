@@ -68,9 +68,10 @@ README.md
 data/pet_breeds/*
 !data/pet_breeds/.gitkeep
 
-# Models - only exclude non-trained models, keep the trained model
-# Note: We want to include models/autogluon_model/ and all its contents
-# So we don't exclude models/* here
+# Models - exclude everything except the trained model
+models/*
+!models/autogluon_model/
+!models/autogluon_model/*
 
 # Outputs
 outputs/
