@@ -15,7 +15,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender-dev \
     libgomp1 \
     curl \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 # Environment variables
 ENV PYTHONPATH=/app/src
@@ -26,19 +27,10 @@ ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
 # Pre-copy requirements for caching
 COPY requirements.txt .
 
-# Install pip packages
+# Install pip packages with optimizations
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
-
-# Optional: install explicitly versioned extras
-RUN pip install --no-cache-dir \
-    streamlit==1.28.0 \
-    torch==2.3.0 \
-    torchvision==0.18.0 \
-    lightning==2.2.3 \
-    pillow==10.0.0 \
-    opencv-python==4.8.1.78
-
+    pip install --no-cache-dir -r requirements.txt && \
+    pip cache purge
 
 # Copy project
 COPY . .
