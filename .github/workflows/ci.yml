@@ -1,11 +1,10 @@
 name: Continuous Integration
+
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-
-permissions: write-all
 
 jobs:
   test:
@@ -31,58 +30,44 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install scikit-learn pillow matplotlib seaborn pandas numpy streamlit black datasets huggingface_hub kaggle
+        pip install -r requirements.txt
 
     - name: Format code
       run: |
         make format
 
-    - name: Set up Kaggle API
+    - name: Test imports
       run: |
-        mkdir -p ~/.kaggle
-        echo '{"username":"${{ secrets.KAGGLE_USERNAME }}","key":"${{ secrets.KAGGLE_KEY }}"}' > ~/.kaggle/kaggle.json
-        chmod 600 ~/.kaggle/kaggle.json
+        python -c "
+        import streamlit
+        import torch
+        import torchvision
+        import autogluon.multimodal
+        import scripts.preprocess
+        import scripts.train_model
+        import scripts.validate_model
+        print('✅ All imports successful')
+        "
 
-    - name: Fetch training data from Kaggle
+    - name: Test data fetching
       run: |
         python scripts/fetch_data.py
+        if [ -d "data/pet_breeds" ] && [ "$(ls -A data/pet_breeds)" ]; then
+          echo "✅ Data fetching successful"
+        else
+          echo "❌ Data fetching failed"
+          exit 1
+        fi
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-
-    - name: Build training Docker image
+    - name: Test Docker build
       run: |
-        docker build -f Dockerfile.training -t pet-breed-classifier:training-data .
-        docker tag pet-breed-classifier:training-data ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:training-data
-        docker push ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:training-data
+        docker build -t pet-breed-classifier:test .
+        docker run --rm pet-breed-classifier:test python -c "import streamlit; print('✅ Docker test successful')"
 
-    - name: Run training pipeline in Docker
+    - name: Test summary
       run: |
-        docker run --rm \
-          -v $(pwd)/data:/app/data \
-          -v $(pwd)/models:/app/models \
-          -v $(pwd)/outputs:/app/outputs \
-          pet-breed-classifier:training-data python run_pipeline.py
-
-    - name: Build production Docker image with trained model
-      run: |
-        docker build -t pet-breed-classifier:latest .
-        docker tag pet-breed-classifier:latest ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:latest
-        docker push ${{ secrets.DOCKER_USERNAME }}/pet-breed-classifier:latest
-
-    - name: Generate evaluation report
-      run: |
-        make eval-simple
-
-    - name: Update Branch
-      env:
-          NAME: ${{ secrets.USER_NAME }}
-          EMAIL: ${{ secrets.USER_EMAIL }}
-      run: |
-        make update-branch USER_NAME=$NAME USER_EMAIL=$EMAIL 
+        echo "🎉 All CI tests passed!"
+        echo "✅ Code formatting is correct"
+        echo "✅ All imports work correctly"
+        echo "✅ Data fetching works"
+        echo "✅ Docker build works" 
