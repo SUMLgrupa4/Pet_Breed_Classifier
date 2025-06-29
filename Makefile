@@ -1,4 +1,4 @@
-.PHONY: install format train eval eval-simple test-local clean help update-branch docker-build docker-push docker-run docker-train-ci docker-train-compose docker-train-compose-detached fetch-data train-local train-ci
+.PHONY: install format train eval eval-simple test-local clean help update-branch docker-build docker-push docker-run docker-train-ci docker-train-compose docker-train-compose-detached fetch-data train-local train-ci docker-run-production docker-run-local
 
 # Fast install for CI/CD (no AutoGluon)
 install:
@@ -8,7 +8,7 @@ install:
 # Full install for app (with AutoGluon)
 install-app:
 	pip install --upgrade pip &&\
-	pip install -r requirements-app.txt
+	pip install -r requirements.txt
 
 format:
 	black *.py
@@ -62,6 +62,24 @@ docker-push-training:
 docker-run:
 	docker run -p 8501:8501 pet-breed-classifier:latest
 
+docker-run-production:
+	@echo "Starting production app with trained model..."
+	@if [ ! -d "models/autogluon_model" ]; then \
+		echo "ERROR: No trained model found! Please train the model first."; \
+		echo "Run: make train"; \
+		exit 1; \
+	fi
+	docker-compose up --build -d
+	@echo "SUCCESS: App running at http://localhost:8501"
+
+docker-run-local:
+	@echo "Starting local development app..."
+	@if [ ! -d "models/autogluon_model" ]; then \
+		echo "WARNING: No trained model found - running in demo mode"; \
+	fi
+	docker-compose up --build
+	@echo "SUCCESS: App running at http://localhost:8501"
+
 docker-run-training:
 	docker run -it --rm pet-breed-classifier:training-data python run_pipeline.py
 
@@ -105,6 +123,8 @@ help:
 	@echo "  docker-push     - Push Docker image to registry"
 	@echo "  docker-push-training - Push training Docker image to registry"
 	@echo "  docker-run      - Run Docker container"
+	@echo "  docker-run-production - Run production app with trained model"
+	@echo "  docker-run-local - Run local development app"
 	@echo "  docker-run-training - Run training in Docker container"
 	@echo "  docker-train-ci  - Run training in Docker container for CI"
 	@echo "  docker-train-compose - Run training in Docker container using docker-compose"

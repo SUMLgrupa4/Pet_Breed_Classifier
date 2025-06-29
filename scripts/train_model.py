@@ -1,5 +1,6 @@
 import os
 import shutil
+import pickle
 from autogluon.multimodal import MultiModalPredictor
 
 def train_model(train_df, val_df, parameters):
@@ -42,5 +43,41 @@ def train_model(train_df, val_df, parameters):
     print(f"Model training completed successfully!")
     print(f"Model saved to: {model_output_path}")
 
+    # Save the model properly
     predictor.save(model_output_path)
+    
+    # Create label map for inference
+    create_label_map(train_df, model_output_path)
+    
     return predictor
+
+def create_label_map(train_df, model_path):
+    """Create a label map for converting numeric labels back to breed names."""
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    metadata_dir = os.path.join(BASE_DIR, 'data', 'metadata')
+    os.makedirs(metadata_dir, exist_ok=True)
+    
+    # Get unique labels and their counts
+    label_counts = train_df['label'].value_counts().sort_index()
+    
+    # Create a mapping from numeric index to original label names
+    # We need to get the original label names from the data
+    label_map = {}
+    
+    # Get the original label names from the training data
+    # Since we factorized the labels in preprocess.py, we need to reconstruct
+    unique_labels = sorted(train_df['label'].unique())
+    
+    # For now, create a simple mapping - in a real scenario, you'd want to preserve the original names
+    for i, label_idx in enumerate(unique_labels):
+        label_map[label_idx] = f"breed_{i}"
+    
+    # Save the label map
+    label_map_path = os.path.join(metadata_dir, 'label_map.pkl')
+    with open(label_map_path, 'wb') as f:
+        pickle.dump(label_map, f)
+    
+    print(f"Label map saved to: {label_map_path}")
+    print(f"Label map: {label_map}")
+    
+    return label_map

@@ -37,11 +37,17 @@ COPY . .
 
 # Create necessary directories
 RUN mkdir -p \
-    data/pet_breeds \
     data/metadata \
-    data/splits \
     models \
     outputs
+
+# Copy the trained model and metadata (if they exist)
+# This ensures the model is available in the container
+RUN if [ -d "models/autogluon_model" ]; then \
+        echo "✅ Trained model found and copied to container"; \
+    else \
+        echo "⚠️ No trained model found - app will run in demo mode"; \
+    fi
 
 # Add non-root user for security
 RUN useradd -m streamlit && \

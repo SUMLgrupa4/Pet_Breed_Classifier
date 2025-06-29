@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import pickle
 from sklearn.model_selection import train_test_split
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -14,9 +15,10 @@ def preprocess_data(parameters):
     raw_data_path = os.path.join(BASE_DIR, 'data', 'pet_breeds')
     outputs_dir = os.path.join(BASE_DIR, 'outputs')
     splits_dir = os.path.join(BASE_DIR, 'data', 'splits')
+    metadata_dir = os.path.join(BASE_DIR, 'data', 'metadata')
 
     # Debug: Print paths
-    print(f"🔍 Debug Paths:")
+    print(f"Debug Paths:")
     print(f"   __file__: {__file__}")
     print(f"   BASE_DIR: {BASE_DIR}")
     print(f"   raw_data_path: {raw_data_path}")
@@ -32,7 +34,7 @@ def preprocess_data(parameters):
     if os.path.exists(data_dir):
         print(f"   Data directory contents: {os.listdir(data_dir)}")
     else:
-        print(f"   ❌ Data directory not found: {data_dir}")
+        print(f"   ERROR: Data directory not found: {data_dir}")
 
     image_files = []
 
@@ -90,6 +92,8 @@ def preprocess_data(parameters):
     # Plot class distribution
     os.makedirs(outputs_dir, exist_ok=True)
     os.makedirs(splits_dir, exist_ok=True)
+    os.makedirs(metadata_dir, exist_ok=True)
+    
     plt.figure(figsize=(12, 6))
     class_counts.sort_index().plot(kind='bar')
     plt.title("Class Distribution")
@@ -118,6 +122,17 @@ def preprocess_data(parameters):
         print(f"Class imbalance detected (ratio: {imbalance_ratio:.1f})")
     else:
         print(f"Class distribution is relatively balanced")
+
+    # Create label map before encoding
+    unique_labels = sorted(df['label'].unique())
+    label_map = {i: label for i, label in enumerate(unique_labels)}
+    
+    # Save label map
+    label_map_path = os.path.join(metadata_dir, 'label_map.pkl')
+    with open(label_map_path, 'wb') as f:
+        pickle.dump(label_map, f)
+    print(f"Label map saved to: {label_map_path}")
+    print(f"Label map: {label_map}")
 
     # Encode labels
     df['label'] = pd.factorize(df['label'])[0]

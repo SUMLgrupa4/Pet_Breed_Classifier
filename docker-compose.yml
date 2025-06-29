@@ -7,8 +7,9 @@ services:
     ports:
       - "8501:8501"
     volumes:
-      - ./data:/app/data
-      - ./models:/app/models
+      # Mount only the trained model and metadata (read-only for security)
+      - ./models:/app/models:ro
+      - ./data/metadata:/app/data/metadata:ro
       - model_cache:/app/.cache
     environment:
       - PYTHONPATH=/app
@@ -33,6 +34,10 @@ services:
         reservations:
           memory: 4G
           cpus: '2.0'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pet-classifier.rule=Host(`pet-classifier.local`)"
+      - "traefik.http.services.pet-classifier.loadbalancer.server.port=8501"
 
 volumes:
   model_cache: 

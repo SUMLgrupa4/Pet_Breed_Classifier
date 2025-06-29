@@ -4,7 +4,7 @@ parameters = {
         "random_state": 42,
         "image_size": [224, 224],
         "augmentation": True,
-        "time_limit": 3600,  # 1 hour for CI/CD (was 5 hours)
+        "time_limit": 1800,  # 30 min for CI/CD
         "presets": "medium_quality",  # Faster than best_quality for CI
         "hyperparameter_tune_kwargs": {
             "scheduler": "local",
