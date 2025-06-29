@@ -1,6 +1,7 @@
 import os
 import pickle
 import time
+import yaml
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import (
@@ -9,11 +10,73 @@ from sklearn.metrics import (
 )
 from autogluon.multimodal import MultiModalPredictor
 
+def validate_model_loading(model_path='models/autogluon_model'):
+    """Validate that the saved model can be loaded correctly."""
+    print(f"Validating model at: {model_path}")
+    
+    if not os.path.exists(model_path):
+        print(f"ERROR: Model path does not exist: {model_path}")
+        return False
+    
+    # Check required files
+    required_files = ['df_preprocessor.pkl', 'config.yaml', 'model.ckpt']
+    missing_files = []
+    
+    for file in required_files:
+        file_path = os.path.join(model_path, file)
+        if not os.path.exists(file_path):
+            missing_files.append(file)
+    
+    if missing_files:
+        print(f"ERROR: Missing required files: {missing_files}")
+        return False
+    
+    # Load and validate configuration
+    config_path = os.path.join(model_path, 'config.yaml')
+    try:
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+        
+        model_arch = config.get('model', {}).get('timm_image', {}).get('checkpoint_name', 'unknown')
+        print(f"Model architecture: {model_arch}")
+        
+        # Check model size
+        model_ckpt = os.path.join(model_path, 'model.ckpt')
+        size_mb = os.path.getsize(model_ckpt) / (1024 * 1024)
+        print(f"Model checkpoint size: {size_mb:.1f} MB")
+        
+    except Exception as e:
+        print(f"ERROR: Failed to read config: {e}")
+        return False
+    
+    # Try loading the model
+    try:
+        print("Attempting to load model...")
+        predictor = MultiModalPredictor.load(model_path)
+        print("SUCCESS: Model loaded successfully!")
+        
+        # Check model attributes
+        if hasattr(predictor, 'class_labels'):
+            print(f"Number of classes: {len(predictor.class_labels)}")
+            print(f"Class labels: {predictor.class_labels}")
+        else:
+            print("WARNING: No class labels found")
+        
+        return True
+        
+    except Exception as e:
+        print(f"ERROR: Failed to load model: {e}")
+        return False
+
 def evaluate_model(test_df, model_path=None):
     """Load model and evaluate performance on test set."""
     if model_path is None:
         BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         model_path = os.path.join(BASE_DIR, 'models', 'autogluon_model')
+
+    # First validate the model can be loaded
+    if not validate_model_loading(model_path):
+        raise ValueError("Model validation failed")
 
     predictor = MultiModalPredictor.load(model_path)
 

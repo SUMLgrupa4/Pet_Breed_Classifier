@@ -9,19 +9,19 @@ parameters = {
         "hyperparameter_tune_kwargs": {
             "scheduler": "local",
             "searcher": "random",
-            "num_trials": 5  # Reduced from 10 for faster training
+            "num_trials": 3  # Reduced for faster training
         },
         "hyperparameters": {
             "model.names": ["timm_image"],
-            "model.timm_image.checkpoint_name": ["resnet18", "resnet50"],  # Removed mobilenet for speed
-            "optimization.learning_rate": [0.0001, 0.001],  # Reduced options
-            "env.per_gpu_batch_size": [16, 32]  # Removed smaller batch size
+            "model.timm_image.checkpoint_name": "mobilenetv3_large_100",  # Fixed to match saved model
+            "optimization.learning_rate": 0.0004,  # Fixed to match saved model
+            "env.per_gpu_batch_size": 8  # Fixed to match saved model
         },
         "num_gpus": 0,
         "num_cpus": 8,
-        "batch_size": 32,  # Increased for faster training
-        "learning_rate": 0.001,  # Slightly higher for faster convergence
-        "max_epochs": 50,  # Reduced from 100
-        "patience": 10  # Reduced from 15
+        "batch_size": 128,  # Fixed to match saved model
+        "learning_rate": 0.0004,  # Fixed to match saved model
+        "max_epochs": 10,  # Fixed to match saved model
+        "patience": 10
     }
 }

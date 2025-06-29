@@ -1,6 +1,7 @@
 import os
 import shutil
 import pickle
+import yaml
 from autogluon.multimodal import MultiModalPredictor
 
 def train_model(train_df, val_df, parameters):
@@ -19,10 +20,15 @@ def train_model(train_df, val_df, parameters):
     if os.path.exists(model_output_path):
         shutil.rmtree(model_output_path)
 
-    print(f"Starting model training with MAXIMUM QUALITY configuration:")
+    print(f"Starting model training with configuration:")
     print(f"   - Time limit: {model_options['time_limit']} seconds ({model_options['time_limit']/3600:.1f} hours)")
     print(f"   - Preset: {model_options['presets']}")
     print(f"   - Classes: {train_df['label'].nunique()}")
+    
+    # Print model architecture info
+    if 'hyperparameters' in model_options:
+        arch = model_options['hyperparameters'].get('model.timm_image.checkpoint_name', 'auto')
+        print(f"   - Model architecture: {arch}")
 
     # Create and train the model
     predictor = MultiModalPredictor(
@@ -33,12 +39,23 @@ def train_model(train_df, val_df, parameters):
         problem_type="multiclass"
     )
 
-    predictor.fit(
-        train_data=train_df,
-        tuning_data=val_df,
-        time_limit=model_options["time_limit"],
-        presets=model_options["presets"]
-    )
+    # Prepare fit arguments
+    fit_kwargs = {
+        'train_data': train_df,
+        'tuning_data': val_df,
+        'time_limit': model_options["time_limit"],
+        'presets': model_options["presets"]
+    }
+    
+    # Add hyperparameters if specified
+    if 'hyperparameters' in model_options:
+        fit_kwargs['hyperparameters'] = model_options['hyperparameters']
+    
+    # Add hyperparameter tuning if specified
+    if 'hyperparameter_tune_kwargs' in model_options:
+        fit_kwargs['hyperparameter_tune_kwargs'] = model_options['hyperparameter_tune_kwargs']
+
+    predictor.fit(**fit_kwargs)
 
     print(f"Model training completed successfully!")
     print(f"Model saved to: {model_output_path}")
@@ -46,10 +63,33 @@ def train_model(train_df, val_df, parameters):
     # Save the model properly
     predictor.save(model_output_path)
     
+    # Verify the saved model configuration
+    verify_saved_model(model_output_path)
+    
     # Create label map for inference
     create_label_map(train_df, model_output_path)
     
     return predictor
+
+def verify_saved_model(model_path):
+    """Verify that the saved model has the correct configuration."""
+    config_path = os.path.join(model_path, 'config.yaml')
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+        
+        model_arch = config.get('model', {}).get('timm_image', {}).get('checkpoint_name', 'unknown')
+        print(f"Saved model architecture: {model_arch}")
+        
+        # Check if model.ckpt exists
+        model_ckpt = os.path.join(model_path, 'model.ckpt')
+        if os.path.exists(model_ckpt):
+            size_mb = os.path.getsize(model_ckpt) / (1024 * 1024)
+            print(f"Model checkpoint size: {size_mb:.1f} MB")
+        else:
+            print("WARNING: model.ckpt not found!")
+    else:
+        print("WARNING: config.yaml not found!")
 
 def create_label_map(train_df, model_path):
     """Create a label map for converting numeric labels back to breed names."""

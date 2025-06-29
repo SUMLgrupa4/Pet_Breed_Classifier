@@ -7,6 +7,7 @@ import time
 from PIL import Image
 from pathlib import Path
 import tempfile
+import yaml
 
 # --- Custom CSS for Modern Look ---
 st.markdown("""
@@ -27,24 +28,61 @@ body { background: #f6f8fa; }
 # --- Utility Functions ---
 @st.cache_resource
 def load_model():
-    """Load the trained AutoGluon model from the models directory."""
+    """Load the trained AutoGluon model from the models directory or Hugging Face Hub."""
     from autogluon.multimodal import MultiModalPredictor
+    import yaml
+    
+    # Try loading from local path first
     model_path = Path("models/autogluon_model")
-    if not model_path.exists():
-        return None, "No trained model found at models/autogluon_model."
+    if model_path.exists():
+        # Check for required model files
+        required_files = ['df_preprocessor.pkl', 'config.yaml', 'model.ckpt']
+        missing_files = [f for f in required_files if not (model_path / f).exists()]
+        
+        if missing_files:
+            return None, f"Model incomplete. Missing files: {', '.join(missing_files)}"
+        
+        try:
+            # Load model configuration to verify architecture
+            config_path = model_path / 'config.yaml'
+            if config_path.exists():
+                with open(config_path, 'r') as f:
+                    config = yaml.safe_load(f)
+                
+                # Extract model architecture info
+                model_arch = config.get('model', {}).get('timm_image', {}).get('checkpoint_name', 'unknown')
+                print(f"Loading model with architecture: {model_arch}")
+            
+            # Load the model without specifying architecture (let AutoGluon use saved config)
+            predictor = MultiModalPredictor.load(str(model_path))
+            
+            # Verify model loaded correctly
+            if hasattr(predictor, 'class_labels'):
+                print(f"Model loaded successfully with {len(predictor.class_labels)} classes")
+            else:
+                print("Model loaded but class labels not found")
+                
+            return predictor, None
+            
+        except Exception as e:
+            error_msg = str(e)
+            
+            # Provide specific error messages for common issues
+            if "Missing key(s) in state_dict" in error_msg or "size mismatch" in error_msg:
+                return None, f"Model architecture mismatch. The saved model was trained with a different architecture than expected. Please retrain the model or check the configuration. Error: {error_msg}"
+            elif "CUDA" in error_msg:
+                return None, f"GPU/CUDA error. Try running on CPU. Error: {error_msg}"
+            else:
+                return None, f"Error loading model: {error_msg}"
     
-    # Check for required model files
-    required_files = ['df_preprocessor.pkl', 'config.yaml']
-    missing_files = [f for f in required_files if not (model_path / f).exists()]
-    
-    if missing_files:
-        return None, f"Model incomplete. Missing files: {', '.join(missing_files)}"
-    
+    # If local model not found, try loading from Hugging Face Hub
     try:
-        predictor = MultiModalPredictor.load(str(model_path))
-        return predictor, None
+        print("Local model not found, attempting to load from Hugging Face Hub...")
+        # You can specify your Hugging Face model repository here
+        # predictor = MultiModalPredictor.load("your-username/pet-breed-classifier")
+        return None, "Local model not found. Hugging Face Hub loading not configured."
     except Exception as e:
-        return None, f"Error loading model: {e}"
+        return None, f"Failed to load model from Hugging Face Hub: {e}"
 
 @st.cache_data
 def load_label_map():

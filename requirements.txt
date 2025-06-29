@@ -30,6 +30,9 @@ datasets
 huggingface_hub
 kaggle
 
+# Configuration parsing
+PyYAML
+
 # Optional: for evaluation and visualization
 plotly
 tqdm
