@@ -19,8 +19,8 @@ black>=23.0.0
 
 # PyTorch ecosystem (CPU-only for smaller size)
 --find-links https://download.pytorch.org/whl/torch_stable.html
-torch>=2.0.0,<3.0+cpu
-torchvision>=0.15.0,<1.0+cpu
+torch==2.0.1+cpu
+torchvision==0.15.2+cpu
 lightning>=2.0.0,<3.0
 
 # AutoML
