@@ -30,8 +30,17 @@ jobs:
           
     - name: Install dependencies
       run: |
+        # Clean up disk space before installing
+        sudo apt-get clean
+        sudo rm -rf /var/lib/apt/lists/*
+        
+        # Install with cleanup
         pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install --no-cache-dir -r requirements.txt
+        
+        # Clean up after installation
+        pip cache purge
+        find ~/.cache/pip -name "*.whl" -delete 2>/dev/null || true
 
     - name: Format code
       run: |
@@ -74,6 +83,20 @@ jobs:
         import app
         print('✅ Streamlit app imports successfully')
         "
+
+    - name: Clean up disk space
+      run: |
+        # Remove unnecessary files
+        find . -name "*.pyc" -delete
+        find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+        find . -name "*.log" -delete
+        find . -name ".DS_Store" -delete
+        
+        # Clean pip cache
+        pip cache purge
+        
+        # Show disk usage
+        df -h
 
   build-and-deploy:
     needs: test-and-validate

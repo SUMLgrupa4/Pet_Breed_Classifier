@@ -17,10 +17,10 @@ streamlit>=1.28.0,<2.0
 # Code formatting
 black>=23.0.0
 
-# PyTorch ecosystem
+# PyTorch ecosystem (CPU-only for smaller size)
 --find-links https://download.pytorch.org/whl/torch_stable.html
-torch>=2.0.0,<3.0
-torchvision>=0.15.0,<1.0
+torch>=2.0.0,<3.0+cpu
+torchvision>=0.15.0,<1.0+cpu
 lightning>=2.0.0,<3.0
 
 # AutoML
