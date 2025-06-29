@@ -34,13 +34,27 @@ def load_model():
     
     # Try loading from local path first
     model_path = Path("models/autogluon_model")
+    
+    # Check if we're in Docker and provide helpful debugging info
+    in_docker = os.path.exists('/.dockerenv')
+    if in_docker:
+        print("Running in Docker container")
+        print(f"Current working directory: {os.getcwd()}")
+        print(f"Model path: {model_path.absolute()}")
+        print(f"Model path exists: {model_path.exists()}")
+        if model_path.exists():
+            print(f"Model directory contents: {list(model_path.iterdir())}")
+    
     if model_path.exists():
         # Check for required model files
         required_files = ['df_preprocessor.pkl', 'config.yaml', 'model.ckpt']
         missing_files = [f for f in required_files if not (model_path / f).exists()]
         
         if missing_files:
-            return None, f"Model incomplete. Missing files: {', '.join(missing_files)}"
+            error_msg = f"Model incomplete. Missing files: {', '.join(missing_files)}"
+            if in_docker:
+                error_msg += " (Docker: Check if model was properly copied during build)"
+            return None, error_msg
         
         try:
             # Load model configuration to verify architecture
@@ -74,6 +88,14 @@ def load_model():
                 return None, f"GPU/CUDA error. Try running on CPU. Error: {error_msg}"
             else:
                 return None, f"Error loading model: {error_msg}"
+    else:
+        # Model directory not found
+        error_msg = "No trained model found at models/autogluon_model."
+        if in_docker:
+            error_msg += " (Docker: The model was not copied into the container during build. Check .dockerignore and Dockerfile)"
+        else:
+            error_msg += " Please train the model first using: python run_pipeline.py"
+        return None, error_msg
     
     # If local model not found, try loading from Hugging Face Hub
     try:

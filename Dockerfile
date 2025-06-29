@@ -32,7 +32,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt && \
     pip cache purge
 
-# Copy project files
+# Copy project files (excluding what's in .dockerignore)
 COPY . .
 
 # Create necessary directories
@@ -41,12 +41,35 @@ RUN mkdir -p \
     models \
     outputs
 
-# Copy the trained model and metadata (if they exist)
-# This ensures the model is available in the container
-RUN if [ -d "models/autogluon_model" ]; then \
-        echo "✅ Trained model found and copied to container"; \
+# Verify and validate the trained model
+RUN echo "Checking for trained model..." && \
+    if [ -d "models/autogluon_model" ]; then \
+        echo "SUCCESS: Trained model directory found" && \
+        ls -la models/autogluon_model/ && \
+        if [ -f "models/autogluon_model/model.ckpt" ]; then \
+            echo "SUCCESS: Model checkpoint found" && \
+            echo "Model size: $(du -sh models/autogluon_model/model.ckpt | cut -f1)" && \
+        else \
+            echo "ERROR: Model checkpoint not found!" && \
+            exit 1 && \
+        fi && \
+        if [ -f "models/autogluon_model/config.yaml" ]; then \
+            echo "SUCCESS: Model config found" && \
+        else \
+            echo "ERROR: Model config not found!" && \
+            exit 1 && \
+        fi && \
+        if [ -f "models/autogluon_model/df_preprocessor.pkl" ]; then \
+            echo "SUCCESS: Data preprocessor found" && \
+        else \
+            echo "ERROR: Data preprocessor not found!" && \
+            exit 1 && \
+        fi && \
+        echo "SUCCESS: All required model files found" && \
     else \
-        echo "⚠️ No trained model found - app will run in demo mode"; \
+        echo "ERROR: No trained model found at models/autogluon_model/" && \
+        echo "Please ensure the model is trained and available before building the Docker image" && \
+        exit 1 && \
     fi
 
 # Add non-root user for security
